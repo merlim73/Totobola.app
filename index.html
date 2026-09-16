@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TOTOBOLA PRO — Poisson + Monte Carlo + Algoritmo Genético</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
 <style>
   :root{
-    --bg:#0b1220; --bg2:#111a2e; --card:#152238; --card2:#1b2a44;
-    --line:#25395c; --txt:#e8eefc; --muted:#93a4c7;
-    --green:#22c55e; --yellow:#eab308; --red:#ef4444; --blue:#3b82f6;
-    --accent:#00d4a3;
+    --bg:#2a0505; --bg2:#3d0a0a; --card:#4a0e0e; --card2:#5c1414;
+    --line:#7a1f1f; --txt:#fff5e6; --muted:#e8b4a0;
+    --green:#22c55e; --yellow:#facc15; --red:#ef4444; --blue:#facc15;
+    --accent:#facc15;
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Segoe UI',system-ui,Arial,sans-serif;background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--txt);min-height:100vh;}
@@ -17,20 +18,22 @@
   header h1{margin:0;font-size:1.4rem;letter-spacing:1px;}
   header h1 span{color:var(--accent);}
   header p{margin:4px 0 0;color:var(--muted);font-size:.8rem;}
-  nav{display:flex;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--line);}
-  nav button{flex:1;min-width:90px;background:none;border:none;color:var(--muted);padding:11px 5px;font-size:.76rem;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
-  nav button.active{color:var(--accent);border-bottom-color:var(--accent);}
+  nav{display:flex;overflow-x:auto;background:var(--bg);border-bottom:2px solid var(--accent);padding:6px;gap:4px;}
+  nav button{flex:1;min-width:90px;background:var(--accent);color:#2a0505;border:none;border-radius:8px;padding:11px 5px;font-size:.76rem;cursor:pointer;font-weight:800;white-space:nowrap;opacity:.75;}
+  nav button.active{opacity:1;box-shadow:0 0 0 2px #fff inset;}
   main{padding:14px;max-width:960px;margin:0 auto;}
   .tab{display:none;} .tab.active{display:block;}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.25);}
   .card h2{margin:0 0 10px;font-size:1.02rem;color:var(--accent);}
   .card h3{margin:14px 0 8px;font-size:.9rem;color:var(--blue);}
   .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
-  select,input,button,textarea{background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:8px 10px;border-radius:8px;font-size:.85rem;font-family:inherit;}
+  select,input,button,textarea{background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:8px 10px;border-radius:8px;font-size:.85rem;font-family:inherit;transition:filter .15s ease, transform .1s ease;}
   input{width:100%;}
-  button{cursor:pointer;background:var(--blue);border:none;font-weight:600;}
+  button{cursor:pointer;background:var(--blue);color:#2a0505;border:none;font-weight:700;}
+  button:hover{filter:brightness(1.1);}
+  button:active{transform:scale(.97);}
   button.ghost{background:transparent;border:1px solid var(--line);color:var(--muted);}
-  button.danger{background:var(--red);}
+  button.danger{background:var(--red);color:#fff;}
   button.acc{background:var(--accent);color:#022;}
   table{width:100%;border-collapse:collapse;font-size:.78rem;}
   th,td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left;}
@@ -75,7 +78,9 @@
   .coupon .gamecell{font-weight:600;white-space:nowrap;}
   .coupon .num{color:var(--muted);font-weight:400;margin-right:4px;}
   .pillrow{display:flex;gap:3px;}
-  .pill{flex:1;text-align:center;padding:5px 2px;border-radius:6px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-size:.75rem;font-weight:700;color:var(--muted);}
+  .pill{flex:1;text-align:center;padding:5px 2px;border-radius:6px;border:1px solid var(--line);background:var(--bg2);cursor:pointer;font-size:.75rem;font-weight:700;color:var(--muted);transition:transform .1s ease, filter .15s ease;}
+  .pill:hover{filter:brightness(1.2);}
+  .pill:active{transform:scale(.95);}
   .pill.auto{box-shadow:inset 0 0 0 2px var(--blue);}
   .pill.selected{background:var(--accent);color:#022;border-color:var(--accent);}
   .pill small{display:block;font-weight:400;font-size:.6rem;}
@@ -90,14 +95,82 @@
   .dot.ok{background:var(--green);} .dot.err{background:var(--red);} .dot.idle{background:var(--muted);}
   .coupon .block-end td{border-bottom:2px solid var(--accent);}
   .coupon .gamenum{color:var(--accent);font-weight:800;margin-right:6px;}
+  .tribute{position:relative;background:linear-gradient(180deg,#1a2a5c 0%,#3d1a5c 50%,#2a0505 100%);padding:22px 14px 18px;text-align:center;overflow:hidden;border-bottom:2px solid var(--accent);}
+  .tribute svg{max-width:340px;width:100%;height:auto;position:relative;z-index:2;}
+  .tribute .star{position:absolute;color:#fff5c2;animation:twinkle 2.2s ease-in-out infinite;z-index:1;}
+  @keyframes twinkle{0%,100%{opacity:.25;transform:scale(.8);}50%{opacity:1;transform:scale(1.25);}}
+  .tribute .heart{position:absolute;color:#ff6b81;animation:floatheart 4s ease-in-out infinite;z-index:1;}
+  @keyframes floatheart{0%,100%{transform:translateY(0);opacity:.7;}50%{transform:translateY(-10px);opacity:1;}}
+  .tribute p{position:relative;z-index:2;color:#fff5e6;font-size:.85rem;margin:10px 0 0;font-style:italic;text-shadow:0 0 8px rgba(255,255,255,.4);}
+  .tribute p b{color:var(--accent);font-style:normal;}
 </style>
 </head>
 <body>
+<div id="errorBanner" style="display:none;position:sticky;top:0;z-index:999;background:#7a0000;color:#fff;padding:10px 14px;font-size:.8rem;font-family:monospace;white-space:pre-wrap;"></div>
+<script>
+  window.addEventListener('error', function(e){
+    const b = document.getElementById('errorBanner');
+    if(b){ b.style.display='block'; b.textContent += '⚠️ Erro: ' + e.message + ' (linha ' + e.lineno + ')\n'; }
+  });
+</script>
 
 <header>
   <h1>TOTOBOLA <span>PRO</span></h1>
   <p>Equipas reais · Poisson + Monte Carlo + Algoritmo Genético · Regras oficiais do Totobola</p>
 </header>
+
+<div class="tribute">
+  <span class="star" style="top:10%;left:8%;font-size:1.1rem;animation-delay:0s;">★</span>
+  <span class="star" style="top:20%;left:85%;font-size:.8rem;animation-delay:.4s;">★</span>
+  <span class="star" style="top:15%;left:45%;font-size:1.3rem;animation-delay:.8s;">✦</span>
+  <span class="star" style="top:55%;left:12%;font-size:.9rem;animation-delay:1.2s;">★</span>
+  <span class="star" style="top:60%;left:90%;font-size:1rem;animation-delay:1.6s;">✦</span>
+  <span class="star" style="top:8%;left:70%;font-size:.9rem;animation-delay:.6s;">★</span>
+  <span class="heart" style="top:12%;left:25%;font-size:1.1rem;animation-delay:.2s;">♥</span>
+  <span class="heart" style="top:65%;left:75%;font-size:1.3rem;animation-delay:1s;">♥</span>
+  <span class="heart" style="top:70%;left:20%;font-size:1rem;animation-delay:1.8s;">♥</span>
+  <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+    <!-- Nuvem -->
+    <g fill="#ffffff" opacity="0.95">
+      <ellipse cx="200" cy="165" rx="150" ry="38"/>
+      <circle cx="110" cy="150" r="34"/>
+      <circle cx="160" cy="135" r="42"/>
+      <circle cx="215" cy="128" r="46"/>
+      <circle cx="270" cy="140" r="38"/>
+      <circle cx="310" cy="155" r="30"/>
+    </g>
+    <!-- ATLAS (cinzento), à esquerda -->
+    <g>
+      <ellipse cx="150" cy="150" rx="26" ry="18" fill="#9a9a9a"/>
+      <circle cx="122" cy="128" r="20" fill="#9a9a9a"/>
+      <polygon points="108,114 114,96 122,112" fill="#9a9a9a"/>
+      <polygon points="130,110 138,94 142,112" fill="#9a9a9a"/>
+      <polygon points="110,114 114,104 119,112" fill="#e8b4a0"/>
+      <polygon points="132,110 136,100 139,111" fill="#e8b4a0"/>
+      <circle cx="115" cy="128" r="3.2" fill="#1a1a1a"/>
+      <circle cx="130" cy="126" r="3.2" fill="#1a1a1a"/>
+      <path d="M118,136 q4,4 8,0" stroke="#1a1a1a" stroke-width="1.4" fill="none"/>
+      <path d="M95,132 l-14,-3 M95,136 l-15,1 M148,130 l14,-2 M148,134 l14,2" stroke="#c9c9c9" stroke-width="1"/>
+      <path d="M170,150 q18,-14 10,-30" stroke="#9a9a9a" stroke-width="7" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- ZEUS (preto, mancha branca no pescoço), à direita -->
+    <g>
+      <ellipse cx="250" cy="152" rx="27" ry="19" fill="#171717"/>
+      <ellipse cx="238" cy="158" rx="10" ry="7" fill="#ffffff"/>
+      <circle cx="278" cy="129" r="21" fill="#171717"/>
+      <polygon points="265,113 271,94 280,111" fill="#171717"/>
+      <polygon points="288,110 297,93 301,112" fill="#171717"/>
+      <polygon points="267,113 271,103 276,111" fill="#e8b4a0"/>
+      <polygon points="290,110 294,100 297,111" fill="#e8b4a0"/>
+      <circle cx="271" cy="129" r="3.4" fill="#facc15"/>
+      <circle cx="286" cy="127" r="3.4" fill="#facc15"/>
+      <path d="M274,138 q4,4 8,0" stroke="#facc15" stroke-width="1.2" fill="none"/>
+      <path d="M250,133 l-14,-3 M250,137 l-15,1 M305,131 l14,-2 M305,135 l14,2" stroke="#555" stroke-width="1"/>
+      <path d="M228,150 q-18,-15 -8,-32" stroke="#171717" stroke-width="7" fill="none" stroke-linecap="round"/>
+    </g>
+  </svg>
+  <p>Em memória dos dois amores da família <b>Cardoso Campos</b> — Zeus &amp; Atlas, sempre numa nuvem no céu, a proteger a família. 🐾</p>
+</div>
 
 <nav>
   <button class="active" data-tab="jogos">🎫 Totobola</button>
@@ -116,6 +189,23 @@
     <b>Sobre "acertar em todos os jogos":</b> nenhum modelo matemático torna o futebol previsível a 100% — é um desporto com poucos golos e forte acaso (lesões, arbitragem, sorte). Esta ferramenta usa dados reais + Poisson + Monte Carlo + um algoritmo genético para <b>maximizar</b> a tua probabilidade de acerto dentro de um orçamento, nunca para a garantir. Trata os resultados como apoio à decisão, não como certezas.
   </div>
 
+  <div class="card">
+    <h2 style="margin-bottom:6px;">📐 Como funciona o modelo (em português simples)</h2>
+    <details>
+      <summary class="muted" style="cursor:pointer;">Clica para ver o método passo a passo</summary>
+      <ol class="muted" style="margin-top:8px;padding-left:18px;">
+        <li><b>Médias reais da equipa</b>: quantos golos marca/sofre por jogo, calculadas separadamente para quando joga em casa e quando joga fora (não misturadas), e dando mais peso aos jogos mais recentes.</li>
+        <li><b>Confronto direto (H2H)</b>: se as duas equipas já se cruzaram no histórico registado, isso entra na conta com mais peso quanto mais jogos houver entre elas.</li>
+        <li><b>Golos esperados (λ)</b>: cruza o ataque de uma equipa com a defesa da outra, mais uma pequena vantagem por jogar em casa.</li>
+        <li><b>Distribuição de Poisson</b>: os golos no futebol seguem aproximadamente esta distribuição estatística — dá a probabilidade de cada resultado exato (0-0, 1-0, 2-1, etc.).</li>
+        <li><b>Correção Dixon-Coles</b>: o Poisson simples subestima ligeiramente os resultados baixos (0-0, 1-0, 0-1, 1-1) — aplicamos a correção clássica desta área (Dixon &amp; Coles, 1997) para compensar isso.</li>
+        <li><b>Monte Carlo</b>: em vez de só calcular, "joga-se" o confronto milhares de vezes ao computador para confirmar que os números batem certo e mostrar a margem de erro estatística real.</li>
+        <li><b>Algoritmo genético</b>: quando queres uma aposta múltipla, evolui centenas de combinações de duplas/triplas e escolhe a que maximiza, segundo este modelo, a tua probabilidade de acertar 12 ou mais jogos dentro do orçamento que definires.</li>
+      </ol>
+      <p class="muted">Isto é o mesmo tipo de método usado em estudos públicos de modelação de futebol (ex.: análises da Premier League com dados completos de uma época): sem esses dados reais preenchidos aqui, o modelo cai para médias genéricas da liga, sempre marcadas com ⚠️ para não pareceres estar a ver um dado real quando é só uma estimativa.</p>
+    </details>
+  </div>
+
   <div class="card" style="border-color:var(--green);">
     <h2>📅 Dados reais da época 2026/27</h2>
     <div class="status-panel" id="seasonStatusPanel"></div>
@@ -126,9 +216,96 @@
     <p class="muted" style="margin:8px 0 0;">Regra desta ferramenta: <b>nunca inventar dados</b>. Sem dados reais suficientes, as probabilidades usam a média da liga como estimativa explícita, marcada com ⚠️ — nunca apresentada como dado real. As chaves de API introduzidas no separador "APIs/Sync" só ficam guardadas nesta sessão do browser (esta ferramenta não usa armazenamento persistente do browser) — tens de as colar de novo se recarregares a página.</p>
   </div>
 
+  <div class="card" style="border-color:var(--accent);">
+    <h2>🧬 Algoritmo genético — otimizar múltiplas</h2>
+    <p class="muted" style="margin-top:0;">Evolui uma população de sistemas de duplas/triplas (seleção por torneio, cruzamento, mutação, elitismo + imigrantes aleatórios a cada geração para não estagnar) e escolhe o que maximiza — por Monte Carlo — a probabilidade real de 12+ acertos dentro da combinação oficial escolhida. Usa também forma recente ponderada (jogos mais recentes pesam mais) e histórico direto entre as duas equipas (H2H), quando existir. Não é magia: reorganiza melhor a tua aposta com a informação real que já tens — não garante acertos.</p>
+    <p class="muted"><b>Nota honesta:</b> não existe "ligação a supercomputadores mundiais" real que eu possa oferecer aqui — isso não é uma funcionalidade que exista para um ficheiro HTML autónomo. O que existe de real e útil são as 3 APIs gratuitas de futebol (separador 🔌 APIs/Sync) e este motor a correr localmente no teu browser, que já é rápido o suficiente para milhares de simulações em segundos.</p>
+    <div class="row">
+      <span class="muted">Combinação oficial alvo:</span>
+      <select id="autoComboTarget" style="flex:1;"></select>
+    </div>
+    <div class="row">
+      <span class="muted">Gerações:</span><input type="number" id="gaGens" value="25" style="width:70px;">
+      <span class="muted">População:</span><input type="number" id="gaPop" value="16" style="width:70px;">
+      <span class="muted">Sims/avaliação:</span><input type="number" id="gaSims" value="800" style="width:90px;">
+    </div>
+    <div class="flexend">
+      <button class="acc" onclick="runGeneticAlgorithm()">🧬 Correr algoritmo genético</button>
+      <button class="ghost" onclick="runSystemMonteCarlo(20000)">🎲 Avaliar sistema (20.000 sims)</button>
+      <button class="ghost" onclick="runSystemMonteCarlo(1000000)">🎲 Avaliar sistema (1.000.000 sims)</button>
+    </div>
+    <p class="muted" style="margin-top:6px;">1.000.000 de simulações é mais preciso mas mais lento — com sistemas grandes (muitas duplas/triplas) pode demorar bastante ou travar o browser; usa 20.000 no dia a dia e 1.000.000 só para confirmar um sistema pequeno antes de apostares a sério.</p>
+    <div id="autoMultOutput"></div>
+  </div>
+
+  <div class="card" style="border-color:var(--accent);">
+    <h3 style="margin-top:0;">🎯 Super 14 — jogo extra (obrigatório, grátis)</h3>
+    <p class="muted" style="margin-top:0;">Confirmei no <b>Diário da República</b> (Portaria n.º 232/2017, que altera o Regulamento do Totobola): o Super 14 é um 14.º jogo real, com prognóstico 1-X-2 igual aos outros 13, e o artigo 3.º, n.º 5 do regulamento obriga o Departamento de Jogos a divulgar a lista de todos os jogos de cada concurso — incluindo o Super 14 — nos meios que achar convenientes (site, app, mediadores). Confirma-se: o boletim mostra sempre as equipas do Super 14. Para este concurso (Sábado 19/09/2026) já vem pré-preenchido com <b>Atlético de Madrid - Real Madrid</b>, tal como confirmaste no teu ecrã — clica em "Importar e calcular probabilidades" abaixo para o carregar automaticamente aqui.</p>
+    <div class="row">
+      <select id="super14Home" style="flex:1;"></select>
+      <span class="vs">vs</span>
+      <select id="super14Away" style="flex:1;"></select>
+    </div>
+    <div id="super14Prob" class="pick"></div>
+    <div class="flexend" style="margin-bottom:8px;"><button class="acc" onclick="autoPickSuper14()">🤖 Gerar automaticamente (maior probabilidade)</button></div>
+    <div class="muted" style="margin-bottom:4px;">✋ Ou escolhe tu manualmente:</div>
+    <div class="pillrow" id="super14Pills"></div>
+  </div>
+
+  <div class="card" id="boletimCard" style="display:none;">
+    <h2>📋 Boletim Totobola</h2>
+    <div class="toggle-row">
+      <div class="toggle-btn active" id="btnModeAuto" onclick="setSelectionMode('auto')">🤖 Automática (simples)</div>
+      <div class="toggle-btn" id="btnModeAutoMulti" onclick="setSelectionMode('automulti')">🧬 Automática (duplas/triplas)</div>
+      <div class="toggle-btn" id="btnModeManual" onclick="setSelectionMode('manual')">✋ Manual</div>
+    </div>
+    <p class="muted" style="margin-top:0;">Automática (simples) = 1 sinal por jogo, escolhido pelo modelo. Automática (duplas/triplas) = o algoritmo genético gera sozinho um sistema de múltiplas otimizado (podes depois ajustar à mão). Manual = começas do zero e escolhes tudo tu. Preço unitário €0,50/aposta. Nº de apostas = 2^duplas × 3^triplas, restrito às combinações oficiais (2 a 384). Super 14 obrigatório e grátis (defines acima). Jogo cancelado ("b)"): só 1 sinal, conta sempre como certo no escrutínio. <i>Esta lógica segue o funcionamento-padrão publicamente conhecido do Totobola — confirma sempre o preço final no site/app oficial antes de apostar.</i></p>
+    <div class="bet-summary">
+      <span>Jogos: <b id="betCount">0</b></span>
+      <span>Duplas: <b id="betDoubles">0</b> · Triplas: <b id="betTriples">0</b></span>
+      <span>Nº apostas: <b id="betLines">0</b></span>
+      <span>Custo: <b id="betCost">€0,00</b></span>
+    </div>
+    <div class="warn" id="betInvalid" style="display:none;"></div>
+    <div class="ok" id="betValid" style="display:none;"></div>
+    <div class="coupon-wrap">
+      <table class="coupon">
+        <thead><tr><th style="text-align:left;">Jogo</th><th colspan="3">Seleção (1/X/2)</th><th style="text-align:right;">Canc.</th></tr></thead>
+        <tbody id="couponBody"></tbody>
+      </table>
+    </div>
+    <div class="card" style="background:var(--bg2);margin-top:12px;margin-bottom:0;">
+      <h3 style="margin-top:0;">🏆 Verificador de acertos</h3>
+      <p class="muted">Cola os resultados oficiais (ex.: 1X21X2121XX12) e conta quantas das tuas <b id="checkLines">0</b> linhas acertam 13/12/11.</p>
+      <div class="row">
+        <input id="officialResults" placeholder="Resultados oficiais, ex.: 1X21X2121XX12" style="flex:1;font-family:monospace;letter-spacing:2px;">
+        <span class="muted">Super 14:</span>
+        <select id="officialSuper14" style="width:auto;"><option value="">—</option><option>1</option><option>X</option><option>2</option></select>
+      </div>
+      <div class="flexend"><button class="acc" onclick="checkResults()">Verificar acertos</button></div>
+      <div id="checkOutput" style="margin-top:8px;"></div>
+    </div>
+    <details style="margin-top:12px;">
+      <summary class="muted" style="cursor:pointer;">📖 Tabela de combinações (duplas/triplas → nº de apostas)</summary>
+      <div style="overflow-x:auto;margin-top:8px;"><table class="coupon" id="multTable"><thead><tr><th>Apostas</th><th>Duplas</th><th>Triplas</th><th>Preço</th><th>Apostas</th><th>Duplas</th><th>Triplas</th><th>Preço</th></tr></thead><tbody></tbody></table></div>
+    </details>
+  </div>
+
   <div class="warn">
     O boletim ao vivo do concurso atual carrega por JavaScript no site da Jogos Santa Casa e não é acessível às minhas ferramentas de pesquisa. Usa a caixa abaixo para colar a lista de jogos (copiada por ti do site/app), ou o boletim já confirmado mais abaixo.
   </div>
+  <div class="card">
+    <h2>🖼️ Importar boletim a partir de foto/imagem (OCR)</h2>
+    <p class="muted">Tira uma foto ou screenshot do boletim (site/app) e carrega aqui, ou clica na caixa abaixo e cola a imagem (Ctrl+V). A leitura é feita localmente no teu browser (Tesseract.js) — a imagem não é enviada para lado nenhum. O OCR pode errar nomes com acentos ou letras parecidas — confirma sempre a lista antes de calcular.</p>
+    <div class="flexend">
+      <button class="acc" onclick="document.getElementById('boletimImageFile').click()">📁 Escolher foto/ficheiro</button>
+    </div>
+    <input type="file" id="boletimImageFile" accept="image/*" style="display:none;" onchange="handleBoletimImage(event)">
+    <div id="boletimImagePasteZone" tabindex="0" style="margin-top:8px;border:2px dashed var(--line);border-radius:8px;padding:16px;text-align:center;cursor:text;">ou clica aqui e cola a imagem (Ctrl+V)</div>
+    <span class="muted" id="ocrFileName"></span>
+    <p class="muted" id="ocrStatus"></p>
+  </div>
+
   <div class="card">
     <h2>📋 Colar boletim desta semana (Jogos Santa Casa)</h2>
     <p class="muted">Um jogo por linha, formato "Equipa Casa - Equipa Fora" (aceita também "x" ou "vs").</p>
@@ -168,69 +345,7 @@
     <button class="acc" onclick="addMatch()" style="width:100%;">+ Adicionar jogo à jornada</button>
   </div>
 
-  <div class="card">
-    <h2>🧬 Algoritmo genético — otimizar múltiplas</h2>
-    <p class="muted" style="margin-top:0;">Evolui uma população de sistemas de duplas/triplas (seleção, cruzamento, mutação) e escolhe o que maximiza — por Monte Carlo — a probabilidade real de 12+ acertos dentro da combinação oficial escolhida. Não é magia: só reorganiza melhor a tua aposta com a informação que já tens.</p>
-    <div class="row">
-      <span class="muted">Combinação oficial alvo:</span>
-      <select id="autoComboTarget" style="flex:1;"></select>
-    </div>
-    <div class="row">
-      <span class="muted">Gerações:</span><input type="number" id="gaGens" value="25" style="width:70px;">
-      <span class="muted">População:</span><input type="number" id="gaPop" value="16" style="width:70px;">
-      <span class="muted">Sims/avaliação:</span><input type="number" id="gaSims" value="800" style="width:90px;">
-    </div>
-    <div class="flexend">
-      <button class="acc" onclick="runGeneticAlgorithm()">🧬 Correr algoritmo genético</button>
-      <button class="ghost" onclick="runSystemMonteCarlo()">🎲 Avaliar sistema atual (Monte Carlo, 20.000 sims)</button>
-    </div>
-    <div id="autoMultOutput"></div>
-  </div>
-
   <div id="matchesList"></div>
-
-  <div class="card" id="boletimCard" style="display:none;">
-    <h2>📋 Boletim Totobola</h2>
-    <div class="toggle-row">
-      <div class="toggle-btn active" id="btnModeAuto" onclick="setSelectionMode('auto')">🤖 Automática (simples)</div>
-      <div class="toggle-btn" id="btnModeManual" onclick="setSelectionMode('manual')">✋ Manual (duplas/triplas)</div>
-    </div>
-    <p class="muted" style="margin-top:0;">Preço unitário €0,50/aposta. Duplas = 2 sinais num jogo; triplas = 3. Nº de apostas = 2^duplas × 3^triplas, restrito às combinações oficiais (2 a 384). Super 14 obrigatório e grátis. Jogo cancelado ("b)"): só 1 sinal, conta sempre como certo no escrutínio. <i>Esta lógica segue o funcionamento-padrão publicamente conhecido do Totobola — confirma sempre o preço final no site/app oficial antes de apostar.</i></p>
-    <div class="card" style="background:var(--bg2);margin-bottom:12px;">
-      <h3 style="margin-top:0;">🎯 Super 14 (obrigatório, grátis)</h3>
-      <input id="super14Game" placeholder="Jogo do Super 14 (ex.: Real Madrid - Barcelona)" style="margin-bottom:8px;">
-      <div class="pillrow" id="super14Pills"></div>
-    </div>
-    <div class="bet-summary">
-      <span>Jogos: <b id="betCount">0</b></span>
-      <span>Duplas: <b id="betDoubles">0</b> · Triplas: <b id="betTriples">0</b></span>
-      <span>Nº apostas: <b id="betLines">0</b></span>
-      <span>Custo: <b id="betCost">€0,00</b></span>
-    </div>
-    <div class="warn" id="betInvalid" style="display:none;"></div>
-    <div class="ok" id="betValid" style="display:none;"></div>
-    <div class="coupon-wrap">
-      <table class="coupon">
-        <thead><tr><th style="text-align:left;">Jogo</th><th colspan="3">Seleção (1/X/2)</th><th style="text-align:right;">Canc.</th></tr></thead>
-        <tbody id="couponBody"></tbody>
-      </table>
-    </div>
-    <div class="card" style="background:var(--bg2);margin-top:12px;margin-bottom:0;">
-      <h3 style="margin-top:0;">🏆 Verificador de acertos</h3>
-      <p class="muted">Cola os resultados oficiais (ex.: 1X21X2121XX12) e conta quantas das tuas <b id="checkLines">0</b> linhas acertam 13/12/11.</p>
-      <div class="row">
-        <input id="officialResults" placeholder="Resultados oficiais, ex.: 1X21X2121XX12" style="flex:1;font-family:monospace;letter-spacing:2px;">
-        <span class="muted">Super 14:</span>
-        <select id="officialSuper14" style="width:auto;"><option value="">—</option><option>1</option><option>X</option><option>2</option></select>
-      </div>
-      <div class="flexend"><button class="acc" onclick="checkResults()">Verificar acertos</button></div>
-      <div id="checkOutput" style="margin-top:8px;"></div>
-    </div>
-    <details style="margin-top:12px;">
-      <summary class="muted" style="cursor:pointer;">📖 Tabela de combinações (duplas/triplas → nº de apostas)</summary>
-      <div style="overflow-x:auto;margin-top:8px;"><table class="coupon" id="multTable"><thead><tr><th>Apostas</th><th>Duplas</th><th>Triplas</th><th>Preço</th><th>Apostas</th><th>Duplas</th><th>Triplas</th><th>Preço</th></tr></thead><tbody></tbody></table></div>
-    </details>
-  </div>
 </div>
 
 <!-- ===================== TAB EQUIPAS ===================== -->
@@ -252,6 +367,16 @@
     </div>
   </div>
   <div id="teamsList"></div>
+
+  <div class="card">
+    <h2>📇 Perfil da Equipa</h2>
+    <p class="muted">Escolhe uma equipa para ver, num só sítio: posição na tabela, treinador, golos marcados/sofridos, melhor e pior jogador (rendimento), e quem tem mais cartões amarelos/vermelhos.</p>
+    <div class="row">
+      <select id="profileTeamSelect" style="flex:1;"></select>
+      <button class="acc" onclick="renderTeamProfile()">Ver perfil</button>
+    </div>
+    <div id="teamProfileOutput"></div>
+  </div>
 
   <div class="card">
     <h2>🧑‍💼 Treinadores</h2>
@@ -349,7 +474,8 @@
   <div class="card">
     <h3>🔄 Sincronizar o concurso mais recente (experimental)</h3>
     <p class="muted">O site não envia cabeçalhos CORS — um pedido direto do browser falha quase de certeza. Tenta via proxies públicos; se falhar, mostra o texto bruto para ajustarmos juntos.</p>
-    <button onclick="syncTotobolaOficial()">Tentar sincronizar</button>
+    <button onclick="syncTotobolaOficial()">Tentar sincronizar (página de resultados)</button>
+    <button class="ghost" onclick="syncSantaCasaChave()">Tentar ler a chave da homepage</button>
     <p class="muted" id="totobolaStatus"></p>
     <textarea id="totobolaDebug" rows="4" style="width:100%;font-family:monospace;font-size:.7rem;display:none;"></textarea>
   </div>
@@ -416,7 +542,17 @@ let TEAMS = [
 
 TEAMS.push(
   {id:'s0', name:'AVS', division:'segunda', stats:blankStats(), players:[]},
-  {id:'s1', name:'Tondela', division:'segunda', stats:blankStats(), players:[]}
+  {id:'s1', name:'Tondela', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s2', name:'SL Benfica B', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s3', name:'Torreense', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s4', name:'FC Vizela', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s5', name:'FC Felgueiras', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s6', name:'Farense', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s7', name:'Desp. Chaves', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s8', name:'Leixões', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s9', name:'Amarante FC', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s10', name:'UD Leiria', division:'segunda', stats:blankStats(), players:[]},
+  {id:'s11', name:'Portimonense', division:'segunda', stats:blankStats(), players:[]}
 );
 
 let MATCHES = [];
@@ -434,7 +570,15 @@ let COACHES = [
   {team:'Benfica', name:'Marco Silva'},
   {team:'Sporting CP', name:'Rui Borges'},
   {team:'Braga', name:'Carlos Vicens'},
+  {team:'Inter de Milão', name:'Cristian Chivu'},
+  {team:'AS Roma', name:'Gian Piero Gasperini'},
+  {team:'Juventus', name:'Luciano Spalletti'},
+  {team:'Nápoles', name:'Massimiliano Allegri'},
 ];
+// Nota: pesquisei também Atalanta, Fiorentina, Marselha e PSG, mas as fontes encontradas
+// contradiziam-se entre si sobre quem é o treinador atual (ex.: Marselha teve troca em cadeia
+// Marcelino → interino → Gattuso, com uma fonte a mencionar ainda outro nome) — por isso
+// fiquei de fora em vez de arriscar dar-te um nome errado. Preenche manualmente se souberes.
 
 /* ================= NAV ================= */
 document.querySelectorAll('nav button').forEach(btn=>{
@@ -446,7 +590,7 @@ document.querySelectorAll('nav button').forEach(btn=>{
     if(btn.dataset.tab==='jogos') renderTeamSelects();
     if(btn.dataset.tab==='jogadores') renderTeamSelects();
     if(btn.dataset.tab==='historico') renderHistory();
-    if(btn.dataset.tab==='equipas') renderCoaches();
+    if(btn.dataset.tab==='equipas'){ renderCoaches(); renderTeamSelects(); }
   };
 });
 
@@ -488,11 +632,50 @@ function renderCoaches(){
   if(!t) return;
   t.innerHTML = '<tr><th>Equipa</th><th>Treinador</th></tr>' + COACHES.map(c=>`<tr><td>${c.team}</td><td>${c.name}</td></tr>`).join('');
 }
+function computeStandingsRanked(){
+  const table = {};
+  TEAMS.forEach(t=> table[t.id] = {id:t.id, name:t.name, j:0,v:0,e:0,d:0,gf:0,ga:0});
+  HISTORY.forEach(h=>{
+    const sign = h.sign || (h.sh!=null ? (h.sh>h.sa?'1':(h.sh<h.sa?'2':'X')) : null);
+    if(table[h.homeId]){ const s=table[h.homeId]; s.j++; if(h.sh!=null){s.gf+=h.sh; s.ga+=h.sa;} if(sign==='1')s.v++; else if(sign==='2')s.d++; else if(sign==='X')s.e++; }
+    if(table[h.awayId]){ const s=table[h.awayId]; s.j++; if(h.sh!=null){s.gf+=h.sa; s.ga+=h.sh;} if(sign==='2')s.v++; else if(sign==='1')s.d++; else if(sign==='X')s.e++; }
+  });
+  const rows = Object.values(table).filter(s=>s.j>0).sort((a,b)=> (b.v*3+b.e)-(a.v*3+a.e));
+  const ranked = {};
+  rows.forEach((r,i)=> ranked[r.id] = {pos:i+1, of:rows.length, ...r});
+  return ranked;
+}
+function renderTeamProfile(){
+  const id = document.getElementById('profileTeamSelect').value;
+  const team = TEAMS.find(t=>t.id===id);
+  const out = document.getElementById('teamProfileOutput');
+  if(!team){ out.innerHTML=''; return; }
+  const coach = COACHES.find(c=>c.team.toLowerCase()===team.name.toLowerCase());
+  const ranking = computeStandingsRanked()[team.id];
+  const st = team.stats;
+  const best = team.players.length ? team.players.reduce((b,p)=>p.rating>b.rating?p:b, team.players[0]) : null;
+  const worst = team.players.length ? team.players.reduce((w,p)=>p.rating<w.rating?p:w, team.players[0]) : null;
+  const mostYellow = team.players.length ? team.players.reduce((m,p)=>p.yellow>m.yellow?p:m, team.players[0]) : null;
+  const mostRed = team.players.length ? team.players.reduce((m,p)=>p.red>m.red?p:m, team.players[0]) : null;
+  out.innerHTML = `
+    <div class="match-card">
+      <div class="match-teams"><span>${team.name}</span><span class="vs">${labelDiv(team.division)}</span></div>
+      <div class="pick">🧑‍💼 Treinador: <b>${coach ? coach.name : 'não confirmado — adiciona acima'}</b></div>
+      <div class="pick">📊 Posição na tabela (histórico registado): <b>${ranking ? `${ranking.pos}º de ${ranking.of}` : 'sem jogos registados ainda'}</b></div>
+      <div class="pick">⚽ Jogos: <b>${st.games}</b> · Golos marcados: <b>${st.games&&st.totalGF? st.totalGF : '—'}</b> · Golos sofridos: <b>${st.games&&st.totalGA? st.totalGA : '—'}</b></div>
+      <div class="pick">🟨 Total amarelos: <b>${st.yellow}</b> · 🟥 Total vermelhos: <b>${st.red}</b></div>
+      ${best?`<div class="pick">⭐ Melhor jogador (rendimento): <b>${best.name}</b> (${best.rating})</div>`:'<div class="pick muted">Sem plantel registado — adiciona jogadores no separador Jogadores.</div>'}
+      ${worst?`<div class="pick">👎 Pior jogador (rendimento): <b>${worst.name}</b> (${worst.rating})</div>`:''}
+      ${mostYellow&&mostYellow.yellow>0?`<div class="pick">🟨 Mais amarelos no plantel: <b>${mostYellow.name}</b> (${mostYellow.yellow})</div>`:''}
+      ${mostRed&&mostRed.red>0?`<div class="pick">🟥 Mais vermelhos no plantel: <b>${mostRed.name}</b> (${mostRed.red})</div>`:''}
+    </div>`;
+}
+
 
 /* ================= JOGADORES ================= */
 function renderTeamSelects(){
   const opts = TEAMS.map(t=>`<option value="${t.id}">${t.name} (${labelDiv(t.division)})</option>`).join('');
-  ['playerTeamSelect','homeSelect','awaySelect'].forEach(id=>{
+  ['playerTeamSelect','homeSelect','awaySelect','profileTeamSelect'].forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
     const prev = el.value;
@@ -500,6 +683,7 @@ function renderTeamSelects(){
     if(prev) el.value = prev;
   });
   renderPlayers();
+  renderSuper14();
 }
 function labelDiv(d){ return d==='primeira'?'1ª':d==='segunda'?'2ª':d==='terceira'?'3ª':'Int.'; }
 
@@ -612,7 +796,52 @@ function poissonSample(lambda){
   do { k++; p *= Math.random(); } while(p > L);
   return k-1;
 }
-function teamStrength(team){
+function weightedTeamAverages(teamId, context){
+  let games = HISTORY.filter(h=>(h.homeId===teamId||h.awayId===teamId) && h.sh!=null);
+  if(context==='home') games = games.filter(h=>h.homeId===teamId);
+  else if(context==='away') games = games.filter(h=>h.awayId===teamId);
+  if(games.length < 3 && context && context!=='all') return weightedTeamAverages(teamId, 'all');
+  if(!games.length) return null;
+  const decay = 0.85;
+  let wSum=0, gfSum=0, gaSum=0;
+  games.slice(-10).reverse().forEach((h,i)=>{
+    const isHome = h.homeId===teamId;
+    const gf = isHome?h.sh:h.sa, ga = isHome?h.sa:h.sh;
+    const w = Math.pow(decay, i);
+    gfSum += gf*w; gaSum += ga*w; wSum += w;
+  });
+  return { gf: gfSum/wSum, ga: gaSum/wSum, n: games.length };
+}
+// Correção Dixon-Coles: o Poisson bivariado simples subestima ligeiramente os
+// marcadores baixos (0-0, 1-0, 0-1, 1-1). rho negativo corrige isso — valor
+// convencional na literatura (Dixon & Coles, 1997) entre -0.05 e -0.15.
+const DIXON_COLES_RHO = -0.08;
+function dixonColesTau(x, y, lh, la, rho){
+  if(x===0 && y===0) return 1 - lh*la*rho;
+  if(x===0 && y===1) return 1 + lh*rho;
+  if(x===1 && y===0) return 1 + la*rho;
+  if(x===1 && y===1) return 1 - rho;
+  return 1;
+}
+function h2hRecord(homeId, awayId){
+  const games = HISTORY.filter(h=>(h.homeId===homeId&&h.awayId===awayId)||(h.homeId===awayId&&h.awayId===homeId));
+  if(!games.length) return null;
+  const decay = 0.8;
+  let p1=0,pX=0,p2=0,wSum=0;
+  games.slice(-6).reverse().forEach((h,i)=>{
+    const w = Math.pow(decay,i);
+    const sign = h.sign || (h.sh!=null ? (h.sh>h.sa?'1':(h.sh<h.sa?'2':'X')) : null);
+    if(!sign) return;
+    const homeWasHome = h.homeId===homeId;
+    const effSign = homeWasHome ? sign : (sign==='1'?'2':(sign==='2'?'1':'X'));
+    if(effSign==='1') p1+=w; else if(effSign==='2') p2+=w; else pX+=w;
+    wSum+=w;
+  });
+  if(wSum===0) return null;
+  return { p1:p1/wSum*100, pX:pX/wSum*100, p2:p2/wSum*100, n:games.length };
+}
+
+function teamStrength(team, context){
   const st = team.stats;
   const players = team.players;
   const outfield = players.filter(p=>p.pos!=='GR');
@@ -623,32 +852,43 @@ function teamStrength(team){
   const gamesPlayed = st.games || players.reduce((s,p)=>s+p.games,0) || 0;
   const redRate = gamesPlayed ? (st.red||players.reduce((s,p)=>s+p.red,0)) / Math.max(1,gamesPlayed) : 0;
   const hasScoreData = st.games>0 && (st.totalGF>0 || st.totalGA>0);
+  const weighted = weightedTeamAverages(team.id, context);
   const assumed = !hasScoreData;
-  const gf = (st.games && hasScoreData) ? (st.totalGF/st.games) : LEAGUE_AVG_GOALS;
-  const ga = (st.games && hasScoreData) ? (st.totalGA/st.games) : LEAGUE_AVG_GOALS;
+  const gf = weighted ? weighted.gf : ((st.games && hasScoreData) ? (st.totalGF/st.games) : LEAGUE_AVG_GOALS);
+  const ga = weighted ? weighted.ga : ((st.games && hasScoreData) ? (st.totalGA/st.games) : LEAGUE_AVG_GOALS);
   const perfMult = (avgRating/70) * (0.9 + (avgPass/100)*0.2);
   const gkMult = gkRating/70;
   const discMult = 1 - Math.min(0.25, redRate*2);
-  return { attack:(gf/LEAGUE_AVG_GOALS)*perfMult*discMult, defense:(ga/LEAGUE_AVG_GOALS)/gkMult, assumed, gamesReal: st.games||0 };
+  return { attack:(gf/LEAGUE_AVG_GOALS)*perfMult*discMult, defense:(ga/LEAGUE_AVG_GOALS)/gkMult, assumed, gamesReal: st.games||0, splitUsed: !!(weighted && weighted.n>=3 && context && context!=='all') };
 }
 function bestPlayerGuess(team){
   if(!team.players.length) return null;
   return team.players.reduce((best,p)=> p.rating>best.rating? p : best, team.players[0]);
 }
 function calcProbabilities(homeTeam, awayTeam){
-  const H = teamStrength(homeTeam), A = teamStrength(awayTeam);
+  const H = teamStrength(homeTeam, 'home'), A = teamStrength(awayTeam, 'away');
   const HOME_ADV = 1.1;
   const lambdaHome = Math.max(0.15, LEAGUE_AVG_GOALS * H.attack * A.defense * HOME_ADV);
   const lambdaAway = Math.max(0.15, LEAGUE_AVG_GOALS * A.attack * H.defense);
   let p1=0, pX=0, p2=0;
   const MAXG = 8;
   for(let i=0;i<=MAXG;i++) for(let j=0;j<=MAXG;j++){
-    const p = poissonP(lambdaHome,i) * poissonP(lambdaAway,j);
+    let p = poissonP(lambdaHome,i) * poissonP(lambdaAway,j);
+    p *= dixonColesTau(i, j, lambdaHome, lambdaAway, DIXON_COLES_RHO);
     if(i>j) p1+=p; else if(i===j) pX+=p; else p2+=p;
   }
   const total = p1+pX+p2;
+  let fp1=p1/total*100, fpX=pX/total*100, fp2=p2/total*100;
+  const h2h = h2hRecord(homeTeam.id, awayTeam.id);
+  let h2hNote = '';
+  if(h2h){
+    const w = Math.min(0.35, 0.08*h2h.n); // até 35% de peso, cresce com nº de confrontos reais
+    fp1 = fp1*(1-w) + h2h.p1*w; fpX = fpX*(1-w) + h2h.pX*w; fp2 = fp2*(1-w) + h2h.p2*w;
+    h2hNote = ` · H2H real (${h2h.n} jogo${h2h.n===1?'':'s'}, peso ${(w*100).toFixed(0)}%)`;
+  }
   const q = t => t.stats.games>0 ? ((t.stats.totalGF+t.stats.totalGA)>0 ? `real (${t.stats.games}j)` : `real 1X2 (${t.stats.games}j, s/ marcador)`) : 'SEM DADOS REAIS';
-  return { p1:p1/total*100, pX:pX/total*100, p2:p2/total*100, lambdaHome, lambdaAway, assumed: H.assumed||A.assumed, dataQuality: `${q(homeTeam)} / ${q(awayTeam)}` };
+  const splitNote = (H.splitUsed||A.splitUsed) ? ' · forças casa/fora separadas' : '';
+  return { p1:fp1, pX:fpX, p2:fp2, lambdaHome, lambdaAway, assumed: H.assumed||A.assumed, dataQuality: `${q(homeTeam)} / ${q(awayTeam)}${h2hNote}${splitNote}` };
 }
 function monteCarlo(lambdaHome, lambdaAway, N){
   let w1=0, wx=0, w2=0;
@@ -689,6 +929,7 @@ function importBoletimPaste(){
   MATCHES = newMatches;
   MANUAL_PICKS = {}; CANCELED_GAMES = new Set(); SUPER14_PICK = null;
   renderTeams(); renderTeamSelects(); renderMatches();
+  applyModeAfterImport();
   alert(`${newMatches.length} jogos do boletim carregados.`);
 }
 
@@ -707,6 +948,12 @@ const REAL_CONCURSO_ATUAL = [
   {n:12, home:'Juventus', away:'Atalanta', div:'internacional'},
   {n:13, home:'Marselha', away:'PSG', div:'internacional'},
 ];
+// Super 14 deste concurso (Sábado 19/09/2026): confirmado por ti diretamente no ecrã da
+// app/site oficial em 15/09/2026 — não é uma equipa que eu tenha conseguido confirmar sozinho
+// (a página com o boletim em aberto carrega por JavaScript de sessão), mas é uma fonte em
+// primeira mão válida, por isso está aqui já pré-preenchida.
+const SUPER14_ATUAL = {home:'Atlético de Madrid', away:'Real Madrid'};
+
 function importCurrentBoletim(){
   MATCHES = [];
   MANUAL_PICKS = {}; CANCELED_GAMES = new Set(); SUPER14_PICK = null;
@@ -714,7 +961,12 @@ function importCurrentBoletim(){
     const home = findOrCreateTeamDiv(g.home, g.div), away = findOrCreateTeamDiv(g.away, g.div);
     MATCHES.push({id:'cur'+g.n, home:home.id, away:away.id});
   });
+  const s14h = findOrCreateTeamDiv(SUPER14_ATUAL.home, 'internacional');
+  const s14a = findOrCreateTeamDiv(SUPER14_ATUAL.away, 'internacional');
   renderTeams(); renderTeamSelects(); renderMatches();
+  const homeSel = document.getElementById('super14Home'), awaySel = document.getElementById('super14Away');
+  if(homeSel && awaySel){ homeSel.value = s14h.id; awaySel.value = s14a.id; renderSuper14(); }
+  applyModeAfterImport();
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelector('nav button[data-tab="jogos"]').classList.add('active');
@@ -753,8 +1005,72 @@ function renderCurrentBoletimTable(){
   const blockEnds = new Set([3,6,9,13]);
   t.innerHTML = REAL_CONCURSO_ATUAL.map(g=>{
     const cls = blockEnds.has(g.n) ? 'block-end' : '';
-    return `<tr class="${cls}"><td class="gamecell"><span class="gamenum">${g.n}</span>${g.home} - ${g.away}</td><td colspan="3"><div class="pillrow"><div class="pill">1</div><div class="pill">X</div><div class="pill">2</div></div></td></tr>`;
+    return `<tr class="${cls}"><td class="gamecell"><span class="gamenum">${g.n}</span>${g.home} - ${g.away}</td><td colspan="3"><div class="pillrow"><div class="pill" style="cursor:default;opacity:.5;">1</div><div class="pill" style="cursor:default;opacity:.5;">X</div><div class="pill" style="cursor:default;opacity:.5;">2</div></div></td></tr>`;
   }).join('');
+}
+
+/* ================= IMPORTAR BOLETIM POR IMAGEM (OCR) ================= */
+function handleBoletimImage(evt){
+  const file = evt.target.files[0];
+  const nameTag = document.getElementById('ocrFileName');
+  if(!file){ if(nameTag) nameTag.textContent = ''; return; }
+  if(nameTag) nameTag.textContent = `Ficheiro selecionado: ${file.name}`;
+  runOCR(file);
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  const zone = document.getElementById('boletimImagePasteZone');
+  if(zone) zone.addEventListener('paste', e=>{
+    const items = (e.clipboardData || window.clipboardData).items;
+    for(const item of items){
+      if(item.type.indexOf('image')===0){ const file = item.getAsFile(); runOCR(file); break; }
+    }
+  });
+});
+async function runOCR(file){
+  const status = document.getElementById('ocrStatus');
+  if(typeof Tesseract === 'undefined'){ status.textContent = '❌ A biblioteca de OCR não carregou (precisa de ligação à internet na primeira vez). Usa a caixa de colar texto abaixo em alternativa.'; return; }
+  status.textContent = '🔎 A ler a imagem (OCR local no browser)... pode demorar alguns segundos.';
+  try{
+    const { data: { text } } = await Tesseract.recognize(file, 'por');
+    status.textContent = '✅ Texto lido — a interpretar os jogos...';
+    parseOcrBoletim(text);
+  }catch(err){
+    status.textContent = '❌ Falhou o OCR: '+err.message+'. Tenta uma imagem mais nítida (boa luz, sem inclinação) ou usa a caixa de colar texto.';
+  }
+}
+function parseOcrBoletim(text){
+  const status = document.getElementById('ocrStatus');
+  const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const gameLines = [];
+  lines.forEach(line=>{
+    const cleaned = line.replace(/^\s*\d{1,2}[.\-\)\s]+/, '');
+    const parts = cleaned.split(/\s*-\s*|\s+[xX]\s+|\s+vs\.?\s+/).map(s=>s.trim()).filter(Boolean);
+    if(parts.length===2 && parts[0].length>=3 && parts[1].length>=3 && !/^\d+$/.test(parts[0]) && !/^\d+$/.test(parts[1])){
+      gameLines.push(parts);
+    }
+  });
+  if(gameLines.length===0){
+    status.textContent = '⚠️ Não consegui identificar jogos no texto lido pelo OCR. Confirma a imagem (boa luz, direita) ou usa a caixa de colar texto manualmente.';
+    return;
+  }
+  const baseGames = gameLines.slice(0,13);
+  const superGame = gameLines.length>13 ? gameLines[13] : null;
+  const newMatches = [];
+  baseGames.forEach(([h,a])=>{
+    const home = findOrCreateTeam(h), away = findOrCreateTeam(a);
+    newMatches.push({id:'m'+(idCounter++), home:home.id, away:away.id});
+  });
+  let s14h=null, s14a=null;
+  if(superGame){ s14h = findOrCreateTeam(superGame[0]); s14a = findOrCreateTeam(superGame[1]); }
+  MATCHES = newMatches;
+  MANUAL_PICKS = {}; CANCELED_GAMES = new Set();
+  renderTeams(); renderTeamSelects(); renderMatches();
+  if(s14h && s14a){
+    const homeSel = document.getElementById('super14Home'), awaySel = document.getElementById('super14Away');
+    if(homeSel && awaySel){ homeSel.value = s14h.id; awaySel.value = s14a.id; renderSuper14(); }
+  }
+  applyModeAfterImport();
+  status.textContent = `✅ ${baseGames.length} jogos${superGame?' + Super 14 ('+superGame[0]+' - '+superGame[1]+')':''} identificados e carregados abaixo. Confirma se os nomes ficaram corretos antes de continuar — o OCR erra por vezes acentos ou letras parecidas (ex.: "Fàmalicão" em vez de "Famalicão").`;
 }
 
 /* ================= JOGOS ================= */
@@ -787,6 +1103,7 @@ function renderMatches(){
       </div>
       <div class="pick">Golos esperados: ${r.lambdaHome.toFixed(2)} — ${r.lambdaAway.toFixed(2)} · Sinal: <b>${pick}</b> · Dados: ${r.dataQuality}${r.assumed?' <span class="finished-tag" style="background:var(--yellow);">⚠️ estimativa</span>':''}</div>
       ${(dH||dA)?`<div class="pick">⚖️ Disciplina real: ${dH?home.name+': '+dH:''}${dH&&dA?' — ':''}${dA?away.name+': '+dA:''}</div>`:''}
+      ${(()=>{ const rk=computeStandingsRanked(); const rh=rk[home.id], ra=rk[away.id]; return (rh||ra)?`<div class="pick">📊 Posição: ${rh?home.name+': '+rh.pos+'º/'+rh.of:''}${rh&&ra?' — ':''}${ra?away.name+': '+ra.pos+'º/'+ra.of:''}</div>`:''; })()}
       ${bestOverall ? `<div class="pick">⭐ Maior rendimento registado: <b>${bestOverall.name}</b> (${bestOverall.rating})</div>` : ''}
       <div class="flexend"><button class="ghost small" onclick="runMonteCarlo('${m.id}', ${r.lambdaHome}, ${r.lambdaAway})">🎲 Simular 20.000 jogos</button></div>
       <div id="mc-${m.id}"></div>
@@ -824,15 +1141,23 @@ const MULTIPLAS_OFICIAIS = [
 function isComboOficial(d,t){ return MULTIPLAS_OFICIAIS.some(c=>c.d===d && c.t===t); }
 
 let SELECTION_MODE = 'auto';
+let UI_MODE = 'auto';
 let MANUAL_PICKS = {};
 let CANCELED_GAMES = new Set();
 let SUPER14_PICK = null;
 
 function setSelectionMode(mode){
+  if(mode==='automulti'){ runGeneticAlgorithm(); return; }
+  UI_MODE = mode;
   SELECTION_MODE = mode;
   document.getElementById('btnModeAuto').classList.toggle('active', mode==='auto');
+  document.getElementById('btnModeAutoMulti').classList.remove('active');
   document.getElementById('btnModeManual').classList.toggle('active', mode==='manual');
   renderCoupon();
+}
+function applyModeAfterImport(){
+  if(UI_MODE==='automulti') runGeneticAlgorithm();
+  else { SELECTION_MODE = UI_MODE; renderCoupon(); }
 }
 function selectPick(matchId, choice){
   if(SELECTION_MODE!=='manual') return;
@@ -844,10 +1169,34 @@ function selectPick(matchId, choice){
   renderCoupon();
 }
 function selectSuper14(choice){ SUPER14_PICK = (SUPER14_PICK===choice) ? null : choice; renderSuper14(); }
+function autoPickSuper14(){
+  const homeSel = document.getElementById('super14Home'), awaySel = document.getElementById('super14Away');
+  if(!homeSel || !awaySel || !homeSel.value || !awaySel.value || homeSel.value===awaySel.value){
+    alert('Escolhe primeiro as duas equipas do Super 14 (diferentes uma da outra).'); return;
+  }
+  const h = TEAMS.find(t=>t.id===homeSel.value), a = TEAMS.find(t=>t.id===awaySel.value);
+  const r = calcProbabilities(h, a);
+  SUPER14_PICK = r.p1>=r.pX && r.p1>=r.p2 ? '1' : (r.pX>=r.p1 && r.pX>=r.p2 ? 'X' : '2');
+  renderSuper14();
+}
 function renderSuper14(){
   const box = document.getElementById('super14Pills');
   if(!box) return;
+  const homeSel = document.getElementById('super14Home'), awaySel = document.getElementById('super14Away');
+  if(homeSel && awaySel){
+    const opts = TEAMS.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+    const prevH = homeSel.value, prevA = awaySel.value;
+    homeSel.innerHTML = opts; awaySel.innerHTML = opts;
+    if(prevH) homeSel.value = prevH; else if(TEAMS.length>0) homeSel.selectedIndex = 0;
+    if(prevA) awaySel.value = prevA; else if(TEAMS.length>1) awaySel.selectedIndex = 1;
+    homeSel.onchange = renderSuper14; awaySel.onchange = renderSuper14;
+  }
   box.innerHTML = ['1','X','2'].map(l=>`<div class="pill ${SUPER14_PICK===l?'selected':''}" onclick="selectSuper14('${l}')">${l}</div>`).join('');
+  const probBox = document.getElementById('super14Prob');
+  if(probBox && homeSel && homeSel.value && awaySel.value && homeSel.value!==awaySel.value){
+    const h = TEAMS.find(t=>t.id===homeSel.value), a = TEAMS.find(t=>t.id===awaySel.value);
+    if(h && a){ const r = calcProbabilities(h,a); probBox.textContent = `Probabilidades do modelo: 1: ${r.p1.toFixed(0)}% · X: ${r.pX.toFixed(0)}% · 2: ${r.p2.toFixed(0)}%`; }
+  } else if(probBox) probBox.textContent = '';
   if(!SUPER14_PICK) box.innerHTML += '<span class="muted" style="font-size:.72rem;padding-left:8px;">⚠️ Obrigatório no Totobola real — escolhe 1, X ou 2 (grátis).</span>';
 }
 function toggleCanceled(matchId){
@@ -1054,24 +1403,29 @@ function runGeneticAlgorithm(){
     const scored = pop.map(ind=>({ind, fit: quickHitProb(ind, SIMS)}));
     scored.sort((a,b)=>b.fit-a.fit);
     if(scored[0].fit > bestFit){ bestFit = scored[0].fit; best = scored[0].ind; }
+    const eliteCount = Math.max(1, Math.floor(POP*0.15));
+    const elites = scored.slice(0, eliteCount).map(s=>s.ind);
     const survivors = scored.slice(0, Math.max(2, Math.floor(POP/2))).map(s=>s.ind);
-    const next = [...survivors];
-    while(next.length < POP){
+    const immigrantCount = Math.max(1, Math.floor(POP*0.1)); // sangue novo p/ não estagnar
+    const next = [...elites];
+    while(next.length < POP - immigrantCount){
       const p1 = survivors[Math.floor(Math.random()*survivors.length)];
       const p2 = survivors[Math.floor(Math.random()*survivors.length)];
       let child = crossover(p1,p2);
       if(Math.random()<0.35) child = mutate(child);
       next.push(child);
     }
+    while(next.length < POP) next.push(randomIndividual());
     pop = next;
   }
 
   MANUAL_PICKS = {};
   best.forEach((g,i)=>{ if(g.length>1 || CANCELED_GAMES.has(MATCHES[i].id)===false) MANUAL_PICKS[MATCHES[i].id] = new Set(g); });
-  if(!SUPER14_PICK) SUPER14_PICK = '1';
+  UI_MODE = 'automulti';
   SELECTION_MODE = 'manual';
   document.getElementById('btnModeAuto').classList.remove('active');
-  document.getElementById('btnModeManual').classList.add('active');
+  document.getElementById('btnModeAutoMulti').classList.add('active');
+  document.getElementById('btnModeManual').classList.remove('active');
   renderCoupon();
 
   const {d,t} = geneToDT(best);
@@ -1083,28 +1437,37 @@ function runGeneticAlgorithm(){
   </div>`;
 }
 
-function runSystemMonteCarlo(){
+function runSystemMonteCarlo(N){
+  N = N || 20000;
   const out = document.getElementById('autoMultOutput');
   const sys = computeBetSystem();
   if(!sys.valid){ out.innerHTML = `<div class="warn" style="margin-bottom:0;">Boletim inválido: ${sys.reason}</div>`; return; }
   const lines = enumerateLines();
   if(lines.length===0){ out.innerHTML = `<div class="warn" style="margin-bottom:0;">Sistema demasiado grande para simular aqui (>5000 linhas).</div>`; return; }
-  const N = 20000;
-  const games = MATCHES.map(m=>{
-    const home = TEAMS.find(t=>t.id===m.home), away = TEAMS.find(t=>t.id===m.away);
-    const r = calcProbabilities(home, away);
-    return {lh:r.lambdaHome, la:r.lambdaAway, canceled:CANCELED_GAMES.has(m.id)};
-  });
-  let w13=0, w12=0, w11=0, sumBest=0;
-  for(let s=0;s<N;s++){
-    const outc = games.map(g=> g.canceled?'1':(()=>{const gh=poissonSample(g.lh), ga=poissonSample(g.la); return gh>ga?'1':(gh<ga?'2':'X');})());
-    let best=0;
-    for(const line of lines){ let h=0; for(let i=0;i<outc.length;i++) h += (games[i].canceled || line[i]===outc[i])?1:0; if(h>best) best=h; }
-    sumBest+=best;
-    if(best===13)w13++; else if(best===12)w12++; else if(best===11)w11++;
+  const totalOps = N * lines.length * MATCHES.length;
+  const HARD_CAP = 300000000; // limite de operações para não travar o browser
+  if(totalOps > HARD_CAP){
+    const suggestedN = Math.max(1000, Math.floor(HARD_CAP/(lines.length*Math.max(1,MATCHES.length))));
+    out.innerHTML = `<div class="warn" style="margin-bottom:0;">Este sistema tem ${lines.length} apostas — ${N.toLocaleString('pt-PT')} simulações seriam demasiado pesadas e podiam travar o browser. Experimenta ${suggestedN.toLocaleString('pt-PT')} simulações, ou usa o botão de 20.000, ou reduz as duplas/triplas.</div>`;
+    return;
   }
-  const p = x => (x/N*100).toFixed(2)+'%';
-  out.innerHTML = `<div class="mc-box">
+  out.innerHTML = `<div class="mc-box">⏳ A correr ${N.toLocaleString('pt-PT')} simulações (${lines.length} apostas)... isto pode demorar alguns segundos, sobretudo com 1.000.000.</div>`;
+  setTimeout(()=>{
+    const games = MATCHES.map(m=>{
+      const home = TEAMS.find(t=>t.id===m.home), away = TEAMS.find(t=>t.id===m.away);
+      const r = calcProbabilities(home, away);
+      return {lh:r.lambdaHome, la:r.lambdaAway, canceled:CANCELED_GAMES.has(m.id)};
+    });
+    let w13=0, w12=0, w11=0, sumBest=0;
+    for(let s=0;s<N;s++){
+      const outc = games.map(g=> g.canceled?'1':(()=>{const gh=poissonSample(g.lh), ga=poissonSample(g.la); return gh>ga?'1':(gh<ga?'2':'X');})());
+      let best=0;
+      for(const line of lines){ let h=0; for(let i=0;i<outc.length;i++) h += (games[i].canceled || line[i]===outc[i])?1:0; if(h>best) best=h; }
+      sumBest+=best;
+      if(best===13)w13++; else if(best===12)w12++; else if(best===11)w11++;
+    }
+    const p = x => (x/N*100).toFixed(2)+'%';
+    out.innerHTML = `<div class="mc-box">
     <b>Monte Carlo — ${N.toLocaleString('pt-PT')} simulações (${lines.length} apostas, ${sys.d}D+${sys.t}T):</b><br>
     🥇 Prob. de ≥1 linha com 13 acertos: <b>${p(w13)}</b><br>
     🥈 Prob. de ≥1 linha com 12 acertos: <b>${p(w12)}</b><br>
@@ -1112,6 +1475,7 @@ function runSystemMonteCarlo(){
     Acertos médios da melhor linha: <b>${(sumBest/N).toFixed(2)}</b> / ${games.length}<br>
     <span class="muted">Usa os lambdas do modelo Poisson — fica mais fiável com mais dados reais. São probabilidades, não garantias.</span>
   </div>`;
+  }, 30);
 }
 function runMonteCarlo(matchId, lambdaHome, lambdaAway){
   const r = monteCarlo(lambdaHome, lambdaAway, 20000);
@@ -1265,170 +1629,4 @@ const REAL_CONCURSO_36 = [
   {n:9, home:'Farense', away:'Desp. Chaves', result:'C (cancelado)', div:'segunda'},
   {n:10, home:'Leixões', away:'Amarante FC', result:'1', div:'segunda'},
   {n:11, home:'UD Leiria', away:'Portimonense', result:'1', div:'segunda'},
-  {n:12, home:'Inter de Milão', away:'Nápoles', result:'1', div:'internacional'},
-  {n:13, home:'Arsenal', away:'Chelsea', result:'1', div:'internacional'},
-];
-function renderRealConcurso(){
-  const t = document.getElementById('realConcursoTable'); if(!t) return;
-  t.innerHTML = '<tr><th>#</th><th>Jogo</th><th>Liga</th><th>Resultado</th></tr>' + REAL_CONCURSO_36.map(g=>`<tr><td>${g.n}</td><td>${g.home} - ${g.away}</td><td>${g.div}</td><td><b>${g.result}</b></td></tr>`).join('');
-}
-function importRealConcurso(){
-  let added = 0;
-  REAL_CONCURSO_36.forEach(g=>[g.home,g.away].forEach(name=>{
-    if(!TEAMS.find(t=>t.name.toLowerCase()===name.toLowerCase())){ TEAMS.push({id:'rc'+(idCounter++), name, division:g.div, stats:blankStats(), players:[]}); added++; }
-  }));
-  renderTeams(); renderTeamSelects();
-  alert(`${added} equipas novas importadas.`);
-}
-async function syncTotobolaOficial(){
-  const status = document.getElementById('totobolaStatus'), debug = document.getElementById('totobolaDebug');
-  status.textContent = 'A tentar via proxies públicos...';
-  const targetUrl = 'https://www.jogossantacasa.pt/web/SCCartazResult/bolaNormal';
-  const proxies = [targetUrl, 'https://corsproxy.io/?url='+encodeURIComponent(targetUrl), 'https://api.allorigins.win/raw?url='+encodeURIComponent(targetUrl)];
-  for(const url of proxies){
-    try{
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const html = await res.text();
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      const text = doc.body.textContent.replace(/\s+/g,' ');
-      const matches = [...text.matchAll(/(\d{1,2})\.\s*([A-Za-zÀ-ú0-9. ]{3,30}?)\s*-\s*([A-Za-zÀ-ú0-9. ]{3,30}?)\s*(?=\d{1,2}\.|Jogos deste concurso|Super)/g)];
-      if(matches.length >= 10){
-        status.textContent = `✅ Ligou e encontrei ${matches.length} jogos. Confere no texto de depuração antes de confiares 100%.`;
-        debug.style.display='block'; debug.value = matches.map(m=>`${m[1]}. ${m[2].trim()} - ${m[3].trim()}`).join('\n');
-        setStatusDot('tb','ok'); return;
-      }
-    }catch(err){}
-  }
-  status.textContent = '❌ Não consegui (CORS bloqueado ou concurso sem jogos publicados nesta página). Usa "colar boletim" ou o concurso 36/2026 já verificado.';
-  setStatusDot('tb','err');
-}
-
-/* ================= APIs ================= */
-async function syncFootballData(kind){
-  const key = document.getElementById('fdKey').value.trim();
-  const status = document.getElementById('fdStatus');
-  if(!key){ status.textContent='Cola a tua chave grátis (football-data.org/client/register).'; return; }
-  status.textContent = 'A sincronizar...';
-  try{
-    const url = kind==='standings' ? 'https://api.football-data.org/v4/competitions/PPL/standings' : 'https://api.football-data.org/v4/competitions/PPL/matches?status=FINISHED';
-    const res = await fetch(url, { headers: {'X-Auth-Token': key} });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    if(kind==='standings'){
-      const table = data.standings?.[0]?.table || [];
-      table.forEach(row=>{ let t = TEAMS.find(x=>x.name.toLowerCase().includes(row.team.name.toLowerCase().split(' ')[0])); if(t){ t.stats.games=row.playedGames; t.stats.totalGF=row.goalsFor; t.stats.totalGA=row.goalsAgainst; t.stats.wins=row.won; t.stats.draws=row.draw; t.stats.losses=row.lost; } });
-      renderTeams(); LAST_SYNC = new Date().toISOString(); updateSeasonStatus();
-      status.textContent = `✅ Classificação sincronizada (${table.length} equipas). football-data.org free não dá stats de jogador.`;
-      setStatusDot('fd','ok');
-    } else {
-      const matches = data.matches || [];
-      matches.forEach(mt=> HISTORY.push({monthKey:(mt.utcDate||'').slice(0,7), homeId:'fd_'+mt.homeTeam.id, awayId:'fd_'+mt.awayTeam.id, homeName:mt.homeTeam.name, awayName:mt.awayTeam.name, sh:mt.score.fullTime.home, sa:mt.score.fullTime.away}));
-      renderHistory(); LAST_SYNC = new Date().toISOString(); updateSeasonStatus();
-      status.textContent = `✅ ${matches.length} resultados importados.`;
-      setStatusDot('fd','ok');
-    }
-  }catch(err){ status.textContent = '❌ Falhou: '+err.message+'. Confirma a chave e o limite de 10 pedidos/min.'; setStatusDot('fd','err'); }
-}
-let SDB_LEAGUES = [];
-async function discoverSportsDB(){
-  const status = document.getElementById('sdbStatus');
-  status.textContent = 'A procurar ligas portuguesas...';
-  try{
-    const res = await fetch('https://www.thesportsdb.com/api/v1/json/3/search_all_leagues.php?c=Portugal&s=Soccer');
-    const data = await res.json();
-    SDB_LEAGUES = data.countrys || data.leagues || [];
-    const sel = document.getElementById('sdbLeagueSelect');
-    sel.innerHTML = SDB_LEAGUES.map(l=>`<option value="${l.idLeague}">${l.strLeague}</option>`).join('') || '<option value="">Nenhuma encontrada</option>';
-    status.textContent = `✅ ${SDB_LEAGUES.length} ligas encontradas.`; setStatusDot('sdb','ok');
-  }catch(err){ status.textContent = '❌ Falhou: '+err.message; setStatusDot('sdb','err'); }
-}
-async function syncSportsDBTeams(){
-  const id = document.getElementById('sdbLeagueSelect').value, status = document.getElementById('sdbStatus');
-  if(!id){ status.textContent='Descobre e escolhe uma liga primeiro.'; return; }
-  status.textContent = 'A sincronizar equipas...';
-  try{
-    const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/lookup_all_teams.php?id=${id}`);
-    const data = await res.json(); const teams = data.teams || []; let added=0;
-    teams.forEach(tm=>{ if(!TEAMS.find(t=>t.name.toLowerCase()===tm.strTeam.toLowerCase())){ TEAMS.push({id:'sdb'+(idCounter++), name:tm.strTeam, division:'segunda', stats:blankStats(), players:[]}); added++; } });
-    renderTeams(); renderTeamSelects();
-    status.textContent = `✅ ${added} equipas novas (${teams.length} encontradas). Confirma a divisão de cada uma — dados comunitários.`;
-  }catch(err){ status.textContent = '❌ Falhou: '+err.message; }
-}
-async function syncSportsDBEvents(){
-  const id = document.getElementById('sdbLeagueSelect').value, status = document.getElementById('sdbStatus');
-  if(!id){ status.textContent='Descobre e escolhe uma liga primeiro.'; return; }
-  status.textContent = 'A sincronizar jogos...';
-  try{
-    const season = new Date().getMonth()>=6 ? `${new Date().getFullYear()}-${new Date().getFullYear()+1}` : `${new Date().getFullYear()-1}-${new Date().getFullYear()}`;
-    const res = await fetch(`https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=${id}&s=${season}`);
-    const data = await res.json();
-    const events = (data.events||[]).filter(e=>e.intHomeScore!==null && e.intAwayScore!==null);
-    events.forEach(e=> HISTORY.push({monthKey:(e.dateEvent||'').slice(0,7), homeId:'sdb_'+e.idHomeTeam, awayId:'sdb_'+e.idAwayTeam, homeName:e.strHomeTeam, awayName:e.strAwayTeam, sh:parseInt(e.intHomeScore), sa:parseInt(e.intAwayScore)}));
-    renderHistory();
-    status.textContent = `✅ ${events.length} jogos importados.`;
-  }catch(err){ status.textContent = '❌ Falhou: '+err.message; }
-}
-let AF_LEAGUES = [];
-async function discoverAPIFootball(){
-  const key = document.getElementById('afKey').value.trim(), status = document.getElementById('afStatus');
-  if(!key){ status.textContent='Cola a tua RapidAPI Key.'; return; }
-  status.textContent = 'A procurar ligas de Portugal...';
-  try{
-    const res = await fetch('https://api-football-v1.p.rapidapi.com/v3/leagues?country=Portugal', { headers: {'X-RapidAPI-Key': key, 'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'} });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json(); AF_LEAGUES = data.response || [];
-    const sel = document.getElementById('afLeagueSelect');
-    sel.innerHTML = AF_LEAGUES.map(l=>`<option value="${l.league.id}">${l.league.name}</option>`).join('') || '<option value="">Nenhuma encontrada</option>';
-    status.textContent = `✅ ${AF_LEAGUES.length} competições encontradas.`; setStatusDot('af','ok');
-  }catch(err){ status.textContent = '❌ Falhou (chave inválida ou CORS): '+err.message; setStatusDot('af','err'); }
-}
-async function syncAPIFootballTeams(){
-  const key = document.getElementById('afKey').value.trim(), league = document.getElementById('afLeagueSelect').value;
-  const season = document.getElementById('afSeason').value.trim() || new Date().getFullYear();
-  const status = document.getElementById('afStatus');
-  if(!key||!league){ status.textContent='Descobre as ligas e escolhe uma primeiro.'; return; }
-  status.textContent = 'A sincronizar equipas...';
-  try{
-    const res = await fetch(`https://api-football-v1.p.rapidapi.com/v3/teams?league=${league}&season=${season}`, { headers: {'X-RapidAPI-Key': key, 'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'} });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json(); let added=0;
-    (data.response||[]).forEach(item=>{ if(!TEAMS.find(t=>t.name.toLowerCase()===item.team.name.toLowerCase())){ TEAMS.push({id:'af'+(idCounter++), name:item.team.name, division:'primeira', stats:blankStats(), players:[]}); added++; } });
-    renderTeams(); renderTeamSelects();
-    status.textContent = `✅ ${added} equipas novas. Se vazio, a época ${season} pode não estar no plano grátis.`;
-  }catch(err){ status.textContent = '❌ Falhou: '+err.message; }
-}
-async function syncAPIFootballPlayers(){
-  const key = document.getElementById('afKey').value.trim();
-  const season = document.getElementById('afSeason').value.trim() || new Date().getFullYear();
-  const team = currentTeam(), status = document.getElementById('afStatus');
-  if(!key||!team){ status.textContent='Escolhe uma equipa no separador Jogadores primeiro.'; return; }
-  status.textContent = 'A sincronizar jogadores de '+team.name+'...';
-  try{
-    const res = await fetch(`https://api-football-v1.p.rapidapi.com/v3/players?team=${team.afId||''}&season=${season}`, { headers: {'X-RapidAPI-Key': key, 'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'} });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    (data.response||[]).forEach(item=>{
-      const s = item.statistics?.[0] || {};
-      team.players.push({ name:item.player.name, nat:item.player.nationality||'', games:s.games?.appearences||0, goals:s.goals?.total||0, assists:s.goals?.assists||0, passAcc:s.passes?.accuracy||0, yellow:s.cards?.yellow||0, red:s.cards?.red||0, rating: s.games?.rating ? Math.round(parseFloat(s.games.rating)*10) : 70 });
-    });
-    renderPlayers();
-    status.textContent = `✅ ${(data.response||[]).length} jogadores importados. Falta o team.afId ou época fora do free se vazio.`;
-  }catch(err){ status.textContent = '❌ Falhou: '+err.message; }
-}
-
-/* ================= INIT ================= */
-renderTeams();
-renderTeamSelects();
-renderMatches();
-renderHistory();
-renderRealConcurso();
-renderCurrentBoletimTable();
-renderMultTable();
-fillAutoComboTarget();
-renderCoaches();
-importRealSeasonData();
-updateSeasonStatus();
-</script>
-</body>
-</html>
+  {n:12, ho
