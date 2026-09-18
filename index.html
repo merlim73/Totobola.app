@@ -243,7 +243,6 @@
   <div class="card">
     <h3 style="margin-top:0;">🎫 Boletim de Sábado 19/09/2026</h3>
     <div class="coupon-wrap"><table class="coupon" id="currentBoletimTable"></table></div>
-    <div class="flexend" style="margin-top:10px;"><button class="acc" onclick="importCurrentBoletim()">Importar e calcular probabilidades →</button></div>
   </div>
 
   <div class="card">
@@ -255,8 +254,6 @@
     </div>
     <button class="acc" onclick="addMatch()" style="width:100%;">+ Adicionar jogo à jornada</button>
   </div>
-
-  <div id="matchesList"></div>
 
   <div class="card" style="border-color:var(--accent);">
     <h2>🎯 Escolher tipo de aposta</h2>
@@ -282,6 +279,10 @@
     <div class="flexend" style="margin-bottom:8px;"><button class="acc" onclick="autoPickSuper14()">🤖 Automático</button></div>
     <div class="muted" style="margin-bottom:4px;">✋ Ou escolhe manualmente:</div>
     <div class="pillrow" id="super14Pills"></div>
+  </div>
+
+  <div class="flexend" style="margin-bottom:14px;">
+    <button class="acc" onclick="importCurrentBoletim()" style="width:100%;font-size:.95rem;padding:12px;">Importar e calcular probabilidades →</button>
   </div>
 
   <div class="card" id="boletimCard" style="display:none;">
@@ -321,6 +322,8 @@
       <div style="overflow-x:auto;margin-top:8px;"><table class="coupon" id="multTable"><thead><tr><th>Apostas</th><th>Duplas</th><th>Triplas</th><th>Preço</th><th>Apostas</th><th>Duplas</th><th>Triplas</th><th>Preço</th></tr></thead><tbody></tbody></table></div>
     </details>
   </div>
+
+  <div id="matchesList"></div>
 
 </div>
 
@@ -908,6 +911,8 @@ function importBoletimPaste(){
   renderTeams(); renderTeamSelects(); renderMatches();
   applyModeAfterImport();
   alert(`${newMatches.length} jogos do boletim carregados.`);
+  const target = document.getElementById('boletimCard') || document.getElementById('matchesList');
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 const REAL_CONCURSO_ATUAL = [
@@ -948,7 +953,8 @@ function importCurrentBoletim(){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelector('nav button[data-tab="jogos"]').classList.add('active');
   document.getElementById('tab-jogos').classList.add('active');
-  window.scrollTo(0,0);
+  const target = document.getElementById('boletimCard') || document.getElementById('matchesList');
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
 }
 function avgFouls(teamId){
   const gs = HISTORY.filter(h=>(h.homeId===teamId||h.awayId===teamId) && (h.fh>0||h.fa>0));
@@ -1056,6 +1062,8 @@ function addMatch(){
   if(!home || !away || home===away) return;
   MATCHES.push({id:'m'+(idCounter++), home, away});
   renderMatches();
+  const target = document.getElementById('boletimCard') || document.getElementById('matchesList');
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
 }
 function removeMatch(id){ MATCHES = MATCHES.filter(m=>m.id!==id); renderMatches(); }
 
@@ -1336,7 +1344,7 @@ function repairGenes(genes, targetCombo, probOrder){
 let probOrder2 = [];
 function runGeneticAlgorithm(){
   const out = document.getElementById('autoMultOutput');
-  if(MATCHES.length < 2){ out.innerHTML = '<div class="warn" style="margin-bottom:0;">Importa primeiro um boletim.</div>'; return; }
+  if(MATCHES.length < 2){ alert('Importa primeiro um boletim (colar texto, foto, ou "Boletim de Sábado") antes de gerar a múltipla automática.'); return; }
   const combo = MULTIPLAS_OFICIAIS[parseInt(document.getElementById('autoComboTarget').value)||6];
   const GENS = 25, POP = 16, SIMS = 800; // valores fixos sensatos (campos manuais removidos para simplificar a interface)
 
@@ -1402,6 +1410,7 @@ function runGeneticAlgorithm(){
   document.getElementById('btnModeAutoMulti').classList.add('active');
   document.getElementById('btnModeManual').classList.remove('active');
   renderCoupon();
+  document.getElementById('boletimCard').scrollIntoView({behavior:'smooth', block:'start'});
 
   const {d,t} = geneToDT(best);
   const n = Math.pow(2,d) * Math.pow(3,t);
@@ -1796,4 +1805,4 @@ importRealSeasonData();
 updateSeasonStatus();
 </script>
 </body>
-    </html>
+  </html>
